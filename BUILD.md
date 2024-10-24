@@ -1,43 +1,104 @@
+# Building MatIEC
 
-Compile/Build 
-=============
+## Prerequisites
 
-1) Compiling under Linux
-------------------------
-$ autoreconf -i
-$ ./configure
-$ make
+### Linux
 
+Install the required build tools:
 
-2) Cross-Compiling under Linux, for Windows
--------------------------------------------
-$ ./configure  --host=i586-pc-mingw32
-(or, to use static linking, which does not require installing any mingw dll's on windows)
-$ ./configure  --host=i586-pc-mingw32 LDFLAGS="-static"
-$ make
+```bash
+# Debian/Ubuntu
+sudo apt-get install build-essential autoconf automake libtool
 
+# Fedora/RHEL
+sudo dnf install gcc gcc-c++ autoconf automake libtool
+```
 
+### Windows (MSYS2)
 
+1. Install MSYS2 from https://www.msys2.org/
+2. Open MSYS2 MinGW x64 (`mingw64.exe`)
+3. Install required packages:
 
+```bash
+pacman -S autoconf automake libtool make gcc
+```
 
-Maintaining the Build Environment
-=================================
--> Add new files to Makefile.am or add a new makefile
-$ autoreconf
+## Build Instructions
 
+### Linux Native Build
 
--> Prepare clean project
-$ make distclean
+```bash
+autoreconf -i
+./configure
+make
+```
 
+### Windows Native Build (MSYS2 MinGW64)
 
+```bash
+aclocal
+autoheader
+automake --add-missing
+autoconf
+./configure
+make
+```
 
--> Remember to add these files to your .hgignore
-	Makefile
-	config.*
-	*.a
-	.deps
+### Cross-Compiling on Linux for Windows
 
+```bash
+# Basic build
+./configure --host=i586-pc-mingw32
+make
 
--> Send me TODO list to complete build system.
-	matteo.facchinetti@sirius-es.it
+# Or with static linking (no MinGW DLL dependencies)
+./configure --host=i586-pc-mingw32 LDFLAGS="-static"
+make
+```
 
+## Maintenance Tasks
+
+### Adding New Files
+
+1. Add new files to `Makefile.am` or create a new makefile
+2. Run:
+
+```bash
+autoreconf
+```
+
+### Cleaning Project
+
+```bash
+make distclean
+```
+
+### Version Control Ignore Patterns
+
+Add these patterns to your `.gitignore` or `.hgignore`:
+
+```
+Makefile
+config.*
+*.a
+.deps
+```
+
+## Troubleshooting
+
+### Common Issues
+
+- If `configure` script is missing, run the autotools chain:
+  ```bash
+  aclocal
+  autoheader
+  automake --add-missing
+  autoconf
+  ```
+- If you see warnings about AC_PROG_LEX, they can be safely ignored during build
+
+## Support
+
+For build system improvements or suggestions, contact:
+matteo.facchinetti@sirius-es.it
