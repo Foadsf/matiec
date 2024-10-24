@@ -1,0 +1,106 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - "v*" # Push events to matching v*, e.g. v1.0, v20.15.10
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf automake libtool
+
+      - name: Build
+        run: |
+          autoreconf -i
+          ./configure
+          make
+
+      - name: Package Linux Binary
+        run: |
+          mkdir -p dist/linux
+          cp iec2c dist/linux/
+          cd dist/linux
+          tar czf ../../iec2c-linux-x86_64.tar.gz *
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binary
+          path: iec2c-linux-x86_64.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            autoconf
+            automake
+            libtool
+            make
+
+      - name: Build
+        run: |
+          aclocal
+          autoheader
+          automake --add-missing
+          autoconf
+          ./configure
+          make
+
+      - name: Package Windows Binary
+        run: |
+          mkdir -p dist/windows
+          cp iec2c.exe dist/windows/
+          cp iec2iec.exe dist/windows/
+          cd dist/windows
+          7z a ../../iec2c-windows-x86_64.zip *
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: iec2c-windows-x86_64.zip
+
+  create-release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binary
+
+      - name: Download Windows Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-binary
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            iec2c-linux-x86_64.tar.gz
+            iec2c-windows-x86_64.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
