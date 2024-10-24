@@ -2,14 +2,28 @@ name: Release Build
 
 on:
   push:
+    # Run on any branch when a tag is pushed
     tags:
       - "v*" # Push events to matching v*, e.g. v1.0, v20.15.10
+  # Optionally allow manual trigger
+  workflow_dispatch:
+
+# Ensure we have proper permissions
+permissions:
+  contents: write
+
+defaults:
+  run:
+    # Specify default shell for non-Windows jobs
+    shell: bash
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for proper versioning
 
       - name: Install Dependencies
         run: |
@@ -43,6 +57,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for proper versioning
 
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
@@ -82,8 +98,6 @@ jobs:
   create-release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Download Linux Binary
         uses: actions/download-artifact@v4
